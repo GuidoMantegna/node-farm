@@ -37,7 +37,24 @@ const url = require('url');
 
 ////////////////////////////////////
 // SERVER
-
+const replaceTemplate = (temp, product) => {
+    /* 
+        We replace all the placeholder for the current object property using a RegEx
+        We use the g-flag on it which means global. It will replaces all the 
+        placeholders which match the RegEx and not just the first one that occurs.
+    */
+    let output = temp.replace(/{%PRODUCTNAME%}/g, product.productName);
+    output = output.replace(/{%IMAGE%}/g, product.image);
+    output = output.replace(/{%PRICE%}/g, product.price);
+    output = output.replace(/{%FROM%}/g, product.from);
+    output = output.replace(/{%NUTRIENTS%}/g, product.nutrients);
+    output = output.replace(/{%QUANTITY%}/g, product.quantity);
+    output = output.replace(/{%DESCRIPTION%}/g, product.description);
+    output = output.replace(/{%ID%}/g, product.id);
+    
+    if(!product.organic) output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic');
+    return output;
+  }
 /*
     All Node.js scripts get access to a variable called 
     __dirname, and that variable always translates to the 
@@ -49,6 +66,13 @@ const url = require('url');
 // We use a sync foo() at the top of the level so it'll called once and won't block the code.
 const data = fs.readFileSync(`${__dirname}/dev-data/data.json`, 'utf-8')
 const dataObj = JSON.parse(data)
+
+// As we did with general data, we can call the templates at the top with a sync method while it will be called once.
+// We don't do it whithin server const because the templeates would be read every time a user make a request. 
+const tempOverview = fs.readFileSync(`${__dirname}/templates/template-overview.html`, 'utf-8')
+const tempCard = fs.readFileSync(`${__dirname}/templates/template-card.html`, 'utf-8')
+const tempProduct = fs.readFileSync(`${__dirname}/templates/template-product.html`, 'utf-8')
+
 
 /*
     1. Create a server. createServer()
@@ -64,13 +88,35 @@ const server = http.createServer((req, res) => {
     const pathName = req.url;
 
     switch (pathName) {
+        // Overview section
         case '/':
         case '/overview':
-            res.end('OVERVIEW SECTION')    
+            //Set the header as we send html
+            res.writeHead(200, { 'Content-type': 'text/html' } ) 
+
+            //We loop over dataObj which holds all the products
+            //and in each iteration, we will replace the placeholders
+            //in the template card with the current product info.
+            //Finally cardsHtml will contain a string (becuase of .join(')) 
+            //with all new custom templates. 
+            const cardsHtml = dataObj.map(el => replaceTemplate(tempCard, el)).join('');
+
+            //Then replace tempOverview placeholder with the HTML that we just created.
+            const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml);
+
+            //Send the tempOverview as the resp.
+            res.end(output)    
             break;
+
+        // Product section
         case '/product':
-            res.end('PRODUCT SECTION')    
+            //Set the header as we send html
+            res.writeHead(200, { 'Content-type': 'text/html' } ) 
+            //Send the tempOverview as the resp.
+            res.end(tempProduct)       
             break;
+
+        // API
         case '/api':
             // We need to define the data that will be sended to the browser
             res.writeHead(404, {
@@ -78,7 +124,8 @@ const server = http.createServer((req, res) => {
             })
             res.end(data)    
             break;
-        // If the path is not found we can set the resp. with its header
+
+        // Not Found
         default:
             res.writeHead(404, {
                 'Content-type': 'text/html',
