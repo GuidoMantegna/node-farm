@@ -8,6 +8,12 @@ const http = require('http');
     We use url module to be able to analyze the URL.
 */
 const url = require('url');
+/*
+    imports usually always happen at the top of the file
+    and after the core modules. To import we use the require()
+    function passing the path to the required module to it.
+*/
+const replaceTemplate = require('./modules/replaceTemplate');
 
 ///////////////////////////////////
 // FILES
@@ -37,24 +43,7 @@ const url = require('url');
 
 ////////////////////////////////////
 // SERVER
-const replaceTemplate = (temp, product) => {
-    /* 
-        We replace all the placeholder for the current object property using a RegEx
-        We use the g-flag on it which means global. It will replaces all the 
-        placeholders which match the RegEx and not just the first one that occurs.
-    */
-    let output = temp.replace(/{%PRODUCTNAME%}/g, product.productName);
-    output = output.replace(/{%IMAGE%}/g, product.image);
-    output = output.replace(/{%PRICE%}/g, product.price);
-    output = output.replace(/{%FROM%}/g, product.from);
-    output = output.replace(/{%NUTRIENTS%}/g, product.nutrients);
-    output = output.replace(/{%QUANTITY%}/g, product.quantity);
-    output = output.replace(/{%DESCRIPTION%}/g, product.description);
-    output = output.replace(/{%ID%}/g, product.id);
-    
-    if(!product.organic) output = output.replace(/{%NOT_ORGANIC%}/g, 'not-organic');
-    return output;
-  }
+
 /*
     All Node.js scripts get access to a variable called 
     __dirname, and that variable always translates to the 
