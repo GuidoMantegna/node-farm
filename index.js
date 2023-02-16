@@ -85,9 +85,9 @@ const tempProduct = fs.readFileSync(`${__dirname}/templates/template-product.htm
     so that we can actually listen to incoming requests.
 */
 const server = http.createServer((req, res) => {
-    const pathName = req.url;
+    const { query, pathname } = url.parse(req.url, true);
 
-    switch (pathName) {
+    switch (pathname) {
         // Overview section
         case '/':
         case '/overview':
@@ -102,18 +102,21 @@ const server = http.createServer((req, res) => {
             const cardsHtml = dataObj.map(el => replaceTemplate(tempCard, el)).join('');
 
             //Then replace tempOverview placeholder with the HTML that we just created.
-            const output = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml);
+            const overviewOutput = tempOverview.replace('{%PRODUCT_CARDS%}', cardsHtml);
 
             //Send the tempOverview as the resp.
-            res.end(output)    
+            res.end(overviewOutput)    
             break;
 
         // Product section
         case '/product':
             //Set the header as we send html
             res.writeHead(200, { 'Content-type': 'text/html' } ) 
-            //Send the tempOverview as the resp.
-            res.end(tempProduct)       
+            //1. We take the data object and pick the product that matches the query id
+            const product = dataObj[query.id];
+            //2. We take the template and replace all the placeholders with the real data
+            const productOutput = replaceTemplate(tempProduct, product);
+            res.end(productOutput);      
             break;
 
         // API
